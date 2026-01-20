@@ -17,9 +17,6 @@ The `test-action-commands.yml` workflow demonstrates and tests various GitHub Ac
 - **Environment Variables**: Adding variables via `$GITHUB_ENV`
 - **PATH Modification**: Adding directories to PATH via `$GITHUB_PATH`
 
-The workflow can be triggered by:
-- Push to `main` or `master` branches
-- Pull requests targeting `main` or `master` branches
-- Manual trigger via `workflow_dispatch`
+The workflow can be triggered manually via `workflow_dispatch` in the Actions tab.
 
 To view debug messages, enable debug logging in your workflow run by setting the `ACTIONS_STEP_DEBUG` secret to `true` in your repository settings.
