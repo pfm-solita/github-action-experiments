@@ -41,6 +41,7 @@ The `docker-action-example.yml` workflow demonstrates how to use Docker containe
 - **Environment Variables**: Pass environment variables to Docker containers
 - **Custom Entrypoints**: Override container entrypoints and pass custom arguments
 - **Multiple Examples**: Includes various Docker action patterns from simple hello-world to practical tools
-- **Local Dockerfile**: Build and run Docker containers from a local Dockerfile in the repository (`example-docker/`)
+- **Local Dockerfile**: Build and run Docker containers from a local Dockerfile in the repository
+- **Docker Action Definition**: Use a local Dockerfile as a reusable GitHub Action with `action.yml` (see `example-docker/`)
 
 The workflow can be triggered manually via `workflow_dispatch` in the Actions tab and serves as a template for integrating Docker-based actions into your CI/CD pipelines.

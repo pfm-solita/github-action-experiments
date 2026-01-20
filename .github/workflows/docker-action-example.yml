@@ -104,7 +104,15 @@ jobs:
           echo "Running container with workspace mounted..."
           docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace local-example:latest
       
-      # Step 5: Summary of local Dockerfile usage
+      # Step 5: Using the local Dockerfile as a GitHub Action
+      # This demonstrates how to use a local Dockerfile as a reusable action with the 'uses:' syntax
+      # GitHub Actions will automatically build the Docker image from the Dockerfile and run it
+      - name: Run Local Docker Action via uses syntax
+        uses: ./example-docker
+        with:
+          message: 'Hello from the Docker Action using uses: syntax!'
+      
+      # Step 6: Summary of local Dockerfile usage
       - name: Summary
         run: |
           echo "::notice title=Local Dockerfile Complete::Successfully built and ran Docker container from local Dockerfile"
