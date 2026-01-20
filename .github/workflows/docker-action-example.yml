@@ -66,3 +66,46 @@ jobs:
         run: |
           echo "::notice title=Docker Actions Complete::Successfully demonstrated multiple Docker container actions"
           echo "Docker actions provide isolated, reproducible environments for your CI/CD tasks"
+  
+  # Job demonstrating local Dockerfile usage
+  test-local-dockerfile:
+    # Specify the runner environment
+    runs-on: ubuntu-latest
+    
+    # Define required permissions for the workflow
+    permissions:
+      contents: read
+    
+    steps:
+      # Step 1: Checkout the repository
+      # Required to access the local Dockerfile in the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      # Step 2: Build Docker image from local Dockerfile
+      # This demonstrates how to build a custom Docker image from a Dockerfile in your repository
+      - name: Build Docker Image from Local Dockerfile
+        run: |
+          echo "Building Docker image from example-docker/Dockerfile..."
+          docker build -t local-example:latest ./example-docker
+          echo "Docker image built successfully!"
+      
+      # Step 3: Run the locally built Docker container
+      # This shows how to execute a container built from your local Dockerfile
+      - name: Run Local Docker Container
+        run: |
+          echo "Running the locally built Docker container..."
+          docker run --rm local-example:latest
+      
+      # Step 4: Run local Docker container with volume mount
+      # Demonstrates mounting the workspace into the container
+      - name: Run Local Docker Container with Volume Mount
+        run: |
+          echo "Running container with workspace mounted..."
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace local-example:latest
+      
+      # Step 5: Summary of local Dockerfile usage
+      - name: Summary
+        run: |
+          echo "::notice title=Local Dockerfile Complete::Successfully built and ran Docker container from local Dockerfile"
+          echo "Local Dockerfiles allow you to create custom actions tailored to your repository's needs"
