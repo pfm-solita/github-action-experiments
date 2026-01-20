@@ -1,0 +1,65 @@
+name: Test GitHub Action Commands
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test-commands:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Test error command
+        run: |
+          echo "::error::This is a test error message"
+          echo "::error file=test.txt,line=10,col=5::This is an error with file location"
+          echo "::error title=Error Title::This is an error with a title"
+      
+      - name: Test warning command
+        run: |
+          echo "::warning::This is a test warning message"
+          echo "::warning file=test.txt,line=20,col=10::This is a warning with file location"
+          echo "::warning title=Warning Title::This is a warning with a title"
+      
+      - name: Test notice command
+        run: |
+          echo "::notice::This is a test notice message"
+          echo "::notice file=test.txt,line=30,col=15::This is a notice with file location"
+          echo "::notice title=Notice Title::This is a notice with a title"
+      
+      - name: Test debug command
+        run: |
+          echo "::debug::This is a test debug message"
+          echo "::debug::Debug messages are only visible when debug logging is enabled"
+      
+      - name: Test group commands
+        run: |
+          echo "::group::Test Group"
+          echo "This content is inside a collapsible group"
+          echo "::endgroup::"
+      
+      - name: Test masking secrets
+        run: |
+          MY_SECRET="sensitive-value"
+          echo "::add-mask::$MY_SECRET"
+          echo "Secret value: $MY_SECRET"
+      
+      - name: Test set-output (deprecated but still works)
+        run: |
+          echo "::set-output name=test_output::test_value"
+      
+      - name: Test environment variables
+        run: |
+          echo "test_var=test_value" >> $GITHUB_ENV
+      
+      - name: Test adding to PATH
+        run: |
+          mkdir -p /tmp/test-bin
+          echo "/tmp/test-bin" >> $GITHUB_PATH
+      
+      - name: Summary of all commands tested
+        run: |
+          echo "::notice title=Test Complete::Successfully tested error, warning, notice, debug, group, mask, and other GitHub Action commands"
