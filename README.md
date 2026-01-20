@@ -30,4 +30,4 @@ The `pre-post-example.yml` workflow demonstrates a custom JavaScript action with
   - **Post Step**: Automatically runs after the main step to perform cleanup operations
   - **State Management**: Shows how to pass data from the main step to the post step using `GITHUB_STATE`
 
-The action runs automatically on every push to any branch and demonstrates how GitHub Actions can automatically execute cleanup code even when the main step fails.
+The workflow can be triggered manually via `workflow_dispatch` in the Actions tab and demonstrates how GitHub Actions can automatically execute cleanup code even when the main step fails.
