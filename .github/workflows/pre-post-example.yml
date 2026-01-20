@@ -1,0 +1,21 @@
+name: Pre/Post Action Example
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  test-pre-post-action:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Run custom pre/post action
+        uses: ./my-pre-post-action
+        with:
+          example-input: 'test-value-123'

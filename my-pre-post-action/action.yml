@@ -1,0 +1,14 @@
+name: 'Pre and Post Action Example'
+description: 'Demonstrates pre and post execution logic with state management'
+author: 'GitHub Action Experiments'
+
+inputs:
+  example-input:
+    description: 'An example input parameter'
+    required: true
+    default: 'default-value'
+
+runs:
+  using: 'node20'
+  main: 'index.js'
+  post: 'post.js'
