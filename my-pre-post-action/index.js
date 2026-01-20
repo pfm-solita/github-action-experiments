@@ -7,8 +7,12 @@ const exampleInput = process.env['INPUT_EXAMPLE-INPUT'];
 console.log('=== Main Step (Pre) Execution ===');
 console.log(`Received input: ${exampleInput}`);
 
+// Sanitize input for safe use in state/output values
+// Remove newlines and other problematic characters
+const sanitizedInput = exampleInput ? exampleInput.replace(/[\r\n=%]/g, '_') : 'default';
+
 // Set state for the post step to retrieve
-const stateValue = `processed-${exampleInput}-${Date.now()}`;
+const stateValue = `processed-${sanitizedInput}-${Date.now()}`;
 console.log(`Setting state value: ${stateValue}`);
 
 // Save state using the STATE_ file
