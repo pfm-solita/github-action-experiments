@@ -1,0 +1,68 @@
+# Docker Action Example
+#
+# This workflow demonstrates how to use Docker container actions in GitHub Actions.
+# Docker actions run inside a container, providing an isolated and consistent environment.
+
+name: Docker Action Example
+
+# Trigger the workflow manually from the Actions tab
+on:
+  workflow_dispatch:
+
+jobs:
+  # Job demonstrating Docker container actions
+  test-docker-actions:
+    # Specify the runner environment
+    runs-on: ubuntu-latest
+    
+    # Define required permissions for the workflow
+    permissions:
+      contents: read
+    
+    steps:
+      # Step 1: Using a simple Docker action from the marketplace
+      # The 'hello-world-docker-action' is a basic example that demonstrates
+      # how Docker actions work by printing a greeting message
+      - name: Run Hello World Docker Action
+        uses: docker://hello-world
+        # Docker actions specified with 'docker://' pull the image directly from Docker Hub
+      
+      # Step 2: Checkout the repository
+      # This is required if you want to use Docker actions defined in your own repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      # Step 3: Using a Docker action from the GitHub marketplace
+      # This demonstrates a more practical Docker action that performs a real task
+      - name: Run Docker Lint Action
+        uses: docker://hadolint/hadolint:latest
+        with:
+          # Docker actions can accept inputs just like other actions
+          # This example would lint a Dockerfile if one existed in the repository
+          args: --version
+        # Note: This action runs in a container, isolated from the runner environment
+      
+      # Step 4: Custom Docker action example
+      # You can also run any Docker image as a step using the 'docker://' prefix
+      - name: Run Alpine Linux Container
+        uses: docker://alpine:latest
+        with:
+          # Pass arguments to the container's entrypoint
+          args: echo "Hello from Alpine Linux container!"
+      
+      # Step 5: Using a Docker action with environment variables
+      # Docker actions can access environment variables from the workflow
+      - name: Docker Action with Environment Variables
+        uses: docker://alpine:latest
+        env:
+          CUSTOM_MESSAGE: "This is a custom message from an environment variable"
+        with:
+          # Use shell commands within the container
+          entrypoint: /bin/sh
+          args: -c "echo $CUSTOM_MESSAGE"
+      
+      # Step 6: Summary of Docker action usage
+      - name: Summary
+        run: |
+          echo "::notice title=Docker Actions Complete::Successfully demonstrated multiple Docker container actions"
+          echo "Docker actions provide isolated, reproducible environments for your CI/CD tasks"
