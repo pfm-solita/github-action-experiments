@@ -1,13 +1,13 @@
-name: 'Example Docker Action'
-description: 'A simple example Docker action that demonstrates using a local Dockerfile as a GitHub Action'
-author: 'GitHub Action Experiments'
+name: Example Docker Action
+description: A simple example Docker action that demonstrates using a local Dockerfile as a GitHub Action
+author: GitHub Action Experiments
 
 inputs:
   message:
-    description: 'Optional custom message to display'
+    description: Optional custom message to display
     required: false
-    default: 'Hello from Docker Action!'
+    default: Hello from Docker Action!
 
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: docker
+  image: Dockerfile

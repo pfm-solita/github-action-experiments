@@ -4,6 +4,8 @@
 # This script demonstrates how to create a custom Docker action
 
 # Access input parameters from the action
+# GitHub Actions automatically converts action inputs to environment variables
+# with the INPUT_ prefix (e.g., 'message' input becomes INPUT_MESSAGE)
 MESSAGE="${INPUT_MESSAGE:-Hello from Docker Action!}"
 
 echo "================================================"
