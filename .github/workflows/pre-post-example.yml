@@ -10,11 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Run custom pre/post action
         uses: ./my-pre-post-action
         with:
