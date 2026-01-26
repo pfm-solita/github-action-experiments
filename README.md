@@ -31,3 +31,17 @@ The `pre-post-example.yml` workflow demonstrates a custom JavaScript action with
   - **State Management**: Shows how to pass data from the main step to the post step using `GITHUB_STATE`
 
 The workflow can be triggered manually via `workflow_dispatch` in the Actions tab and demonstrates how GitHub Actions can automatically execute cleanup code even when the main step fails.
+
+### Docker Action Example
+
+The `docker-action-example.yml` workflow demonstrates how to use Docker container actions in GitHub Actions:
+
+- **Docker Hub Images**: Run containers directly from Docker Hub using the `docker://` prefix
+- **Container Isolation**: Docker actions run in isolated containers with their own environments
+- **Environment Variables**: Pass environment variables to Docker containers
+- **Custom Entrypoints**: Override container entrypoints and pass custom arguments
+- **Multiple Examples**: Includes various Docker action patterns from simple hello-world to practical tools
+- **Local Dockerfile**: Build and run Docker containers from a local Dockerfile in the repository
+- **Docker Action Definition**: Use a local Dockerfile as a reusable GitHub Action with `action.yml` (see `example-docker/`)
+
+The workflow can be triggered manually via `workflow_dispatch` in the Actions tab and serves as a template for integrating Docker-based actions into your CI/CD pipelines.
