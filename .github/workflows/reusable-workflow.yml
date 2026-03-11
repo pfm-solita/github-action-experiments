@@ -1,0 +1,56 @@
+# Reusable Workflow B
+#
+# This workflow is designed to be called by other workflows (Workflow A).
+# It demonstrates a job with continue-on-error: all 3 steps run even though
+# step 2 fails, because continue-on-error is set at the job level.
+#
+# Note: continue-on-error: true on a job causes the overall workflow run to
+# succeed even when the job fails. To allow the caller (Workflow A) to detect
+# the failure, this workflow exposes the actual job result as an output.
+
+name: Reusable Workflow B
+
+on:
+  workflow_call:
+    outputs:
+      job-result:
+        description: "The result of the steps-with-failure job based on step outcomes"
+        value: ${{ jobs.steps-with-failure.outputs.job-result }}
+
+jobs:
+  steps-with-failure:
+    runs-on: ubuntu-latest
+
+    permissions: {}
+
+    # continue-on-error allows the job to finish (running all steps) even
+    # after a step fails, and prevents the workflow run from being marked
+    # as failed. The actual failure is communicated via the job output.
+    continue-on-error: true
+
+    outputs:
+      job-result: ${{ steps.step3.outputs.job-result }}
+
+    steps:
+      - name: Step 1 - Print message
+        run: echo "Step 1 completed successfully"
+
+      - name: Step 2 - Fail intentionally
+        id: step2
+        run: |
+          echo "Step 2 is about to fail"
+          exit 1
+
+      # Step 3 uses 'if: always()' so it runs even when step 2 failed.
+      # It also sets an output that reflects whether step 2 failed, so the
+      # caller workflow can act on the real job result despite continue-on-error.
+      - name: Step 3 - Print message
+        id: step3
+        if: always()
+        run: |
+          echo "Step 3 completed (job continued because of continue-on-error)"
+          if [ "${{ steps.step2.outcome }}" = "failure" ]; then
+            echo "job-result=failure" >> $GITHUB_OUTPUT
+          else
+            echo "job-result=success" >> $GITHUB_OUTPUT
+          fi
