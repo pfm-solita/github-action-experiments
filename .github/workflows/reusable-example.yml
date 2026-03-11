@@ -24,11 +24,6 @@ jobs:
     permissions:
       contents: read
 
-    # continue-on-error prevents a step failure from marking the job (and
-    # therefore the calling workflow run) as failed.  The real outcome is
-    # communicated back to the caller via the `result` output instead.
-    continue-on-error: true
-
     outputs:
       result: ${{ steps.set-result.outputs.result }}
 
