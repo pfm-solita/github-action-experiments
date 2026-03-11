@@ -13,6 +13,10 @@ on:
         required: false
         type: boolean
         default: false
+    outputs:
+      result:
+        description: "The actual result of the run-task job ('success' or 'failure')"
+        value: ${{ jobs.run-task.outputs.result }}
 
 jobs:
   run-task:
@@ -20,12 +24,35 @@ jobs:
     permissions:
       contents: read
 
+    # continue-on-error prevents a step failure from marking the job (and
+    # therefore the calling workflow run) as failed.  The real outcome is
+    # communicated back to the caller via the `result` output instead.
+    continue-on-error: true
+
+    outputs:
+      result: ${{ steps.set-result.outputs.result }}
+
     steps:
       - name: Display message
         run: echo "${{ inputs.message }}"
 
       - name: Simulate failure
+        id: simulate-failure
         if: ${{ inputs.simulate_failure }}
         run: |
           echo "::error::Simulated failure requested via input – failing on purpose"
           exit 1
+
+      # Always runs so the result output is set regardless of whether the
+      # previous step failed.  When `simulate_failure` is false the
+      # simulate-failure step is skipped (outcome = 'skipped'), which is
+      # correctly treated as a non-failure here.
+      - name: Set result output
+        id: set-result
+        if: always()
+        run: |
+          if [ "${{ steps.simulate-failure.outcome }}" = "failure" ]; then
+            echo "result=failure" >> $GITHUB_OUTPUT
+          else
+            echo "result=success" >> $GITHUB_OUTPUT
+          fi
