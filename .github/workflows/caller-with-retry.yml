@@ -1,0 +1,46 @@
+name: Caller With Retry Example
+
+# Demonstrates calling a reusable workflow and retrying it once if it fails.
+#
+# How the retry works:
+#   1. `first-attempt`  – calls the reusable workflow.
+#   2. `retry-on-failure` – only runs when `first-attempt` has failed
+#      (uses `needs` + `if: ${{ failure() }}`), calling the reusable
+#      workflow a second time.
+#
+# Because the retry job uses `if: ${{ failure() }}` instead of the default
+# `if: ${{ success() }}`, GitHub Actions will schedule it even though its
+# dependency (`first-attempt`) did not succeed.
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      simulate_failure:
+        description: 'Simulate a failure in the first attempt to trigger the retry'
+        required: false
+        type: boolean
+        default: false
+      simulate_failure_on_retry:
+        description: 'Simulate a failure in the retry attempt'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  first-attempt:
+    uses: ./.github/workflows/reusable-example.yml
+    with:
+      message: 'First attempt – running the reusable workflow'
+      simulate_failure: ${{ inputs.simulate_failure }}
+
+  retry-on-failure:
+    needs: first-attempt
+    # Only run this job when the first attempt failed.
+    if: ${{ failure() }}
+    uses: ./.github/workflows/reusable-example.yml
+    with:
+      message: 'Retry attempt – the first attempt failed, trying again'
+      simulate_failure: ${{ inputs.simulate_failure_on_retry }}
