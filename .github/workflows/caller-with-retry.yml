@@ -7,6 +7,10 @@ name: Caller With Retry Example
 #   2. `retry-on-failure` – only runs when `first-attempt` has failed
 #      (uses `needs` + `if: ${{ failure() }}`), calling the reusable
 #      workflow a second time.
+#   3. `workflow-conclusion` – always runs last and determines the overall
+#      result: succeeds when either attempt succeeded, fails only when both
+#      failed. This is necessary because GitHub Actions marks the run as
+#      failed whenever any job fails, even if a later retry job succeeds.
 #
 # Because the retry job uses `if: ${{ failure() }}` instead of the default
 # `if: ${{ success() }}`, GitHub Actions will schedule it even though its
@@ -44,3 +48,23 @@ jobs:
     with:
       message: 'Retry attempt – the first attempt failed, trying again'
       simulate_failure: ${{ inputs.simulate_failure_on_retry }}
+
+  workflow-conclusion:
+    needs: [first-attempt, retry-on-failure]
+    # Always run so we can evaluate the combined result of both attempts.
+    if: always()
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Check workflow result
+        run: |
+          first="${{ needs.first-attempt.result }}"
+          retry="${{ needs.retry-on-failure.result }}"
+          echo "first-attempt result: $first"
+          echo "retry-on-failure result: $retry"
+          if [[ "$first" == "success" || "$retry" == "success" ]]; then
+            echo "Workflow succeeded."
+          else
+            echo "Workflow failed – all attempts failed."
+            exit 1
+          fi
