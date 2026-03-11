@@ -23,6 +23,11 @@ on:
         required: false
         type: boolean
         default: false
+      simulate_failure_on_retry:
+        description: 'Simulate a failure in the retry attempt'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   first-attempt:
@@ -38,4 +43,4 @@ jobs:
     uses: ./.github/workflows/reusable-example.yml
     with:
       message: 'Retry attempt – the first attempt failed, trying again'
-      simulate_failure: false
+      simulate_failure: ${{ inputs.simulate_failure_on_retry }}
