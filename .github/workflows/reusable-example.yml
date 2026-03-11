@@ -1,0 +1,31 @@
+name: Reusable Example Workflow
+
+on:
+  workflow_call:
+    inputs:
+      message:
+        description: 'Message to display during execution'
+        required: false
+        type: string
+        default: 'Hello from reusable workflow!'
+      simulate_failure:
+        description: 'When true, the workflow will exit with a failure to demonstrate retry behaviour'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  run-task:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Display message
+        run: echo "${{ inputs.message }}"
+
+      - name: Simulate failure
+        if: ${{ inputs.simulate_failure }}
+        run: |
+          echo "::error::Simulated failure requested via input – failing on purpose"
+          exit 1
