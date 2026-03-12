@@ -3,14 +3,20 @@ name: Caller With Retry Example
 # Demonstrates calling a reusable workflow and retrying it once if it fails.
 #
 # How the retry works:
-#   1. `first-attempt`  – calls the reusable workflow.
-#   2. `retry-on-failure` – only runs when `first-attempt` has failed
-#      (uses `needs` + `if: ${{ failure() }}`), calling the reusable
-#      workflow a second time.
+#   1. `first-attempt`  – calls the reusable workflow with
+#      `continue-on-error: true` so that a failure does not immediately mark
+#      the entire workflow run as failed.  The reusable workflow exposes a
+#      `result` output ('success' or 'failure') to communicate the real outcome.
+#   2. `retry-on-failure` – only runs when `first-attempt`'s `result` output
+#      is 'failure', calling the reusable workflow a second time.
+#      This job does NOT use `continue-on-error`, so if the retry itself fails
+#      the workflow run is correctly marked as failed.
 #
-# Because the retry job uses `if: ${{ failure() }}` instead of the default
-# `if: ${{ success() }}`, GitHub Actions will schedule it even though its
-# dependency (`first-attempt`) did not succeed.
+# GitHub Actions marks the entire run as failed the moment any job fails.
+# Putting `continue-on-error: true` only on `first-attempt` means:
+#   - A first-attempt failure does not poison the run.
+#   - A retry failure (both attempts failed) correctly fails the run.
+#   - No extra "conclusion" job is needed.
 
 permissions:
   contents: read
@@ -32,14 +38,19 @@ on:
 jobs:
   first-attempt:
     uses: ./.github/workflows/reusable-example.yml
+    # continue-on-error prevents a first-attempt failure from immediately
+    # marking the workflow run as failed; the retry job can still succeed.
+    continue-on-error: true
     with:
       message: 'First attempt – running the reusable workflow'
       simulate_failure: ${{ inputs.simulate_failure }}
 
   retry-on-failure:
     needs: first-attempt
-    # Only run this job when the first attempt failed.
-    if: ${{ failure() }}
+    # Only run when the first attempt reported a real failure via its output.
+    # We check the output rather than the job result because continue-on-error
+    # causes `first-attempt` to always show a job result of 'success'.
+    if: needs.first-attempt.outputs.result == 'failure'
     uses: ./.github/workflows/reusable-example.yml
     with:
       message: 'Retry attempt – the first attempt failed, trying again'
