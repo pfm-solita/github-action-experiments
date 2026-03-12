@@ -1,0 +1,107 @@
+# Skipped Jobs and Steps
+#
+# This workflow demonstrates how skipped jobs and steps appear in GitHub Actions.
+#
+# Steps are skipped when their `if` condition evaluates to false.
+# Jobs are skipped when their `if` condition evaluates to false, or when a
+# needed job was skipped and the dependent job uses the default condition.
+#
+# The `steps.<id>.outcome` and `steps.<id>.conclusion` context values will
+# show "skipped" for steps that did not run due to a false `if` condition.
+# Similarly, `needs.<job>.result` will show "skipped" for skipped jobs.
+
+name: Skipped Jobs and Steps
+
+on:
+  workflow_dispatch:
+    inputs:
+      run-optional-job:
+        description: "Run the optional job? (true/false)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+permissions: {}
+
+jobs:
+  # Job with a mix of skipped and executed steps
+  steps-demo:
+    name: Steps Demo
+    runs-on: ubuntu-latest
+    permissions: {}
+
+    steps:
+      - name: Always runs
+        id: always
+        run: echo "This step always runs"
+
+      - name: Skipped via false condition
+        id: skipped-false
+        if: false
+        run: echo "This step is NEVER reached"
+
+      - name: Skipped because previous step was skipped (chained skip)
+        id: skipped-chained
+        if: steps.skipped-false.conclusion == 'success'
+        run: echo "This step is skipped because 'skipped-false' did not succeed"
+
+      - name: Runs only on push (skipped on workflow_dispatch)
+        id: skipped-on-dispatch
+        if: github.event_name == 'push'
+        run: echo "This step only runs on push events"
+
+      - name: Always runs - reports step outcomes
+        id: report
+        run: |
+          echo "always              -> conclusion: ${{ steps.always.conclusion }},              outcome: ${{ steps.always.outcome }}"
+          echo "skipped-false       -> conclusion: ${{ steps.skipped-false.conclusion }},       outcome: ${{ steps.skipped-false.outcome }}"
+          echo "skipped-chained     -> conclusion: ${{ steps.skipped-chained.conclusion }},     outcome: ${{ steps.skipped-chained.outcome }}"
+          echo "skipped-on-dispatch -> conclusion: ${{ steps.skipped-on-dispatch.conclusion }}, outcome: ${{ steps.skipped-on-dispatch.outcome }}"
+
+  # Optional job - only runs when the input is "true"
+  optional-job:
+    name: Optional Job (runs only when input is true)
+    runs-on: ubuntu-latest
+    permissions: {}
+    if: inputs.run-optional-job == 'true'
+
+    steps:
+      - name: Optional work
+        run: echo "Running optional job because run-optional-job input is 'true'"
+
+  # This job depends on optional-job. When optional-job is skipped, this job
+  # is also skipped (because the default condition requires all needs to succeed).
+  depends-on-optional:
+    name: Depends on Optional Job (skipped when optional-job is skipped)
+    runs-on: ubuntu-latest
+    permissions: {}
+    needs: optional-job
+
+    steps:
+      - name: Work that depends on optional-job
+        run: echo "Running because optional-job ran successfully"
+
+  # This job always runs regardless of whether optional-job was skipped,
+  # by explicitly handling the skipped result.
+  always-runs-after-optional:
+    name: Always Runs After Optional Job
+    runs-on: ubuntu-latest
+    permissions: {}
+    needs: optional-job
+    if: always()
+
+    steps:
+      - name: Report optional-job result
+        run: |
+          echo "optional-job result: ${{ needs.optional-job.result }}"
+
+      - name: Runs only when optional-job succeeded
+        if: needs.optional-job.result == 'success'
+        run: echo "optional-job ran successfully"
+
+      - name: Runs only when optional-job was skipped
+        if: needs.optional-job.result == 'skipped'
+        run: echo "optional-job was skipped"
