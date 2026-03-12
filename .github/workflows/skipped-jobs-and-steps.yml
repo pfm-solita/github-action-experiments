@@ -1,14 +1,33 @@
-# Skipped Jobs and Steps
+# Skipped Jobs and Steps — with failure() and success() function examples
 #
-# This workflow demonstrates how skipped jobs and steps appear in GitHub Actions.
+# This workflow demonstrates:
 #
-# Steps are skipped when their `if` condition evaluates to false.
-# Jobs are skipped when their `if` condition evaluates to false, or when a
-# needed job was skipped and the dependent job uses the default condition.
+# 1. How skipped jobs and steps appear in GitHub Actions.
+#    Steps are skipped when their `if` condition evaluates to false.
+#    Jobs are skipped when their `if` condition evaluates to false, or when a
+#    needed job was skipped and the dependent job uses the default condition.
+#    The `steps.<id>.outcome` / `steps.<id>.conclusion` context values will
+#    show "skipped" for steps that did not run due to a false `if` condition.
+#    Similarly, `needs.<job>.result` will show "skipped" for skipped jobs.
 #
-# The `steps.<id>.outcome` and `steps.<id>.conclusion` context values will
-# show "skipped" for steps that did not run due to a false `if` condition.
-# Similarly, `needs.<job>.result` will show "skipped" for skipped jobs.
+# 2. How the status-check functions failure() and success() are affected by
+#    different step and job outcomes:
+#
+#    At the step level:
+#      success()  — returns true when ALL previous steps succeeded or were skipped.
+#                   A skipped step does NOT make success() return false.
+#                   A failed step (even with continue-on-error) makes success() return false.
+#      failure()  — returns true when ANY previous step failed.
+#                   A skipped step does NOT trigger failure().
+#                   A failed step with continue-on-error: true DOES trigger failure().
+#
+#    At the job level (inside a dependent job):
+#      success()  — returns true only when ALL needed jobs succeeded.
+#                   A skipped needed job makes success() return false.
+#                   A failed needed job makes success() return false.
+#      failure()  — returns true when ANY needed job failed.
+#                   A skipped needed job does NOT trigger failure().
+#                   A cancelled needed job does NOT trigger failure().
 
 name: Skipped Jobs and Steps
 
@@ -105,3 +124,185 @@ jobs:
       - name: Runs only when optional-job was skipped
         if: needs.optional-job.result == 'skipped'
         run: echo "optional-job was skipped"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # failure() and success() at the STEP level
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  # Demonstrates how success() and failure() evaluate after a skipped step.
+  # Key insight: a skipped step is IGNORED by success() / failure().
+  #   success() stays true even after a skipped step.
+  #   failure() stays false even after a skipped step.
+  step-functions-after-skip:
+    name: "Step functions: after a skipped step"
+    runs-on: ubuntu-latest
+    permissions: {}
+
+    steps:
+      - name: Succeeds
+        id: succeeds
+        run: echo "This step succeeds"
+
+      - name: Skipped
+        id: skipped
+        if: false
+        run: echo "This step is skipped"
+
+      # success() is true because the skipped step does NOT count as a failure.
+      - name: "success() after skip → true (skipped step is ignored)"
+        if: success()
+        run: echo "success() returned true — the skipped step did not affect it"
+
+      # failure() is false because the skipped step does NOT count as a failure.
+      - name: "failure() after skip → false (skipped step is ignored)"
+        if: failure()
+        run: echo "failure() returned true — this should NOT appear"
+
+      - name: Report step outcomes and function values
+        if: always()
+        run: |
+          echo "succeeds -> outcome: ${{ steps.succeeds.outcome }}"
+          echo "skipped  -> outcome: ${{ steps.skipped.outcome }}"
+          echo "(success() step ran if you see it above)"
+          echo "(failure() step did NOT run, confirming failure() == false after a skip)"
+
+  # Demonstrates how success() and failure() evaluate after a step that fails
+  # but has continue-on-error: true.
+  # Key insight: continue-on-error makes the JOB continue, but the step's
+  # outcome is still 'failure'. This means:
+  #   success() returns FALSE after a failed step (even with continue-on-error).
+  #   failure() returns TRUE after a failed step (even with continue-on-error).
+  step-functions-after-failure:
+    name: "Step functions: after a failed step (continue-on-error)"
+    runs-on: ubuntu-latest
+    permissions: {}
+
+    steps:
+      - name: Fails (continue-on-error allows the job to continue)
+        id: fails
+        continue-on-error: true
+        run: exit 1
+
+      # success() is false because the previous step actually failed.
+      - name: "success() after failure → false"
+        if: success()
+        run: echo "success() returned true — this should NOT appear"
+
+      # failure() is true because the previous step failed (even with continue-on-error).
+      - name: "failure() after failure → true"
+        if: failure()
+        run: echo "failure() returned true — the failed step triggered it"
+
+      - name: Report step outcome
+        if: always()
+        run: |
+          echo "fails -> outcome: ${{ steps.fails.outcome }}, conclusion: ${{ steps.fails.conclusion }}"
+          echo "(success() step did NOT run, confirming success() == false after a failure)"
+          echo "(failure() step ran if you see it above)"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # failure() and success() at the JOB level
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  # This job always succeeds. It is used by the two observer jobs below.
+  job-that-succeeds:
+    name: "Job that succeeds (used by observer jobs)"
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Succeed
+        run: echo "This job always succeeds"
+
+  # This job always fails. It has continue-on-error so the workflow run
+  # itself does not turn red, but its result is still 'failure'.
+  job-that-fails:
+    name: "Job that fails (continue-on-error, used by observer jobs)"
+    runs-on: ubuntu-latest
+    permissions: {}
+    continue-on-error: true
+    steps:
+      - name: Fail
+        run: exit 1
+
+  # This job is always skipped. Used by the observer jobs below.
+  job-that-is-skipped:
+    name: "Job that is skipped (used by observer jobs)"
+    runs-on: ubuntu-latest
+    permissions: {}
+    if: false
+    steps:
+      - name: Never runs
+        run: echo "This step is never reached"
+
+  # Observer: depends on the successful job.
+  # success() == true,  failure() == false.
+  job-functions-after-success:
+    name: "Job functions: after a successful needed job"
+    runs-on: ubuntu-latest
+    permissions: {}
+    needs: job-that-succeeds
+    if: always()
+    steps:
+      - name: "success() after needed job succeeded → true"
+        if: success()
+        run: echo "success() returned true — the needed job succeeded"
+
+      - name: "failure() after needed job succeeded → false"
+        if: failure()
+        run: echo "failure() returned true — this should NOT appear"
+
+      - name: Report
+        if: always()
+        run: |
+          echo "job-that-succeeds result: ${{ needs.job-that-succeeds.result }}"
+          echo "(success() step ran if you see it above)"
+          echo "(failure() step did NOT run)"
+
+  # Observer: depends on the failing job.
+  # success() == false, failure() == true.
+  job-functions-after-failure:
+    name: "Job functions: after a failed needed job"
+    runs-on: ubuntu-latest
+    permissions: {}
+    needs: job-that-fails
+    if: always()
+    steps:
+      - name: "success() after needed job failed → false"
+        if: success()
+        run: echo "success() returned true — this should NOT appear"
+
+      - name: "failure() after needed job failed → true"
+        if: failure()
+        run: echo "failure() returned true — the needed job's failure triggered it"
+
+      - name: Report
+        if: always()
+        run: |
+          echo "job-that-fails result: ${{ needs.job-that-fails.result }}"
+          echo "(success() step did NOT run)"
+          echo "(failure() step ran if you see it above)"
+
+  # Observer: depends on the skipped job.
+  # success() == false, failure() == false.
+  # (Neither true — a skipped job is neither a success nor a failure.)
+  job-functions-after-skip:
+    name: "Job functions: after a skipped needed job"
+    runs-on: ubuntu-latest
+    permissions: {}
+    needs: job-that-is-skipped
+    if: always()
+    steps:
+      - name: "success() after needed job skipped → false"
+        if: success()
+        run: echo "success() returned true — this should NOT appear"
+
+      - name: "failure() after needed job skipped → false"
+        if: failure()
+        run: echo "failure() returned true — this should NOT appear"
+
+      - name: "Both success() and failure() are false after a skip — use always()"
+        if: always()
+        run: |
+          echo "job-that-is-skipped result: ${{ needs.job-that-is-skipped.result }}"
+          echo "Neither success() nor failure() ran."
+          echo "When a needed job is skipped, use needs.<job>.result == 'skipped' to detect it."
